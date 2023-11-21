@@ -38,6 +38,7 @@ if __name__ == '__main__':
     torch.manual_seed(args.seed)
 
     model = SRCNN().to(device)
+    model.load_state_dict(torch.load("best.pth", map_location=device))
     criterion = nn.MSELoss()
     optimizer = optim.Adam([
         {'params': model.conv1.parameters()},
