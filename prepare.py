@@ -21,13 +21,25 @@ def train(args):
         lr = lr.resize((lr.width * args.scale, lr.height * args.scale), resample=pil_image.BICUBIC)
         hr = np.array(hr).astype(np.float32)
         lr = np.array(lr).astype(np.float32)
-        hr = convert_rgb_to_y(hr)
-        lr = convert_rgb_to_y(lr)
 
-        for i in range(0, lr.shape[0] - args.patch_size + 1, args.stride):
-            for j in range(0, lr.shape[1] - args.patch_size + 1, args.stride):
-                lr_patches.append(lr[i:i + args.patch_size, j:j + args.patch_size])
-                hr_patches.append(hr[i:i + args.patch_size, j:j + args.patch_size])
+        if args.channel == "Y":
+            hr = convert_rgb_to_y(hr)
+            lr = convert_rgb_to_y(lr)
+
+            for i in range(0, lr.shape[0] - args.patch_size + 1, args.stride):
+                for j in range(0, lr.shape[1] - args.patch_size + 1, args.stride):
+                    lr_patches.append(lr[i:i + args.patch_size, j:j + args.patch_size])
+                    hr_patches.append(hr[i:i + args.patch_size, j:j + args.patch_size])
+
+        elif args.channel == "RGB":
+            for i in range(0, hr.shape[0] - args.patch_size + 1, args.stride):
+                for j in range(0, hr.shape[1] - args.patch_size + 1, args.stride):
+                    lr_patch = lr[i:i + args.patch_size, j:j + args.patch_size, :]
+                    hr_patch = hr[i:i + args.patch_size, j:j + args.patch_size, :]
+                    lr_patch = lr_patch.transpose((2, 0, 1)).reshape(3, args.patch_size, args.patch_size)
+                    hr_patch = hr_patch.transpose((2, 0, 1)).reshape(3, args.patch_size, args.patch_size)
+                    lr_patches.append(lr_patch)
+                    hr_patches.append(hr_patch)
 
     lr_patches = np.array(lr_patches)
     hr_patches = np.array(hr_patches)
@@ -53,8 +65,10 @@ def eval(args):
         lr = lr.resize((lr.width * args.scale, lr.height * args.scale), resample=pil_image.BICUBIC)
         hr = np.array(hr).astype(np.float32)
         lr = np.array(lr).astype(np.float32)
-        hr = convert_rgb_to_y(hr)
-        lr = convert_rgb_to_y(lr)
+
+        if args.channel == "Y":
+            hr = convert_rgb_to_y(hr)
+            lr = convert_rgb_to_y(lr)
 
         lr_group.create_dataset(str(i), data=lr)
         hr_group.create_dataset(str(i), data=hr)
@@ -64,12 +78,13 @@ def eval(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--images-dir', type=str, required=True)
-    parser.add_argument('--output-path', type=str, required=True)
+    parser.add_argument('--images-dir', type=str, default="./DataSet/Train/")
+    parser.add_argument('--output-path', type=str, default="./HanokModel/hanokTrain.h5")
     parser.add_argument('--patch-size', type=int, default=33)
     parser.add_argument('--stride', type=int, default=14)
     parser.add_argument('--scale', type=int, default=2)
     parser.add_argument('--eval', action='store_true')
+    parser.add_argument('--channel', type=str, default='Y')
     args = parser.parse_args()
 
     if not args.eval:
