@@ -56,7 +56,7 @@ def rgb_psnr(img1, img2):
     if str(type(img1)) != "<class 'numpy.ndarray'>":
         img1 = img1.detach().numpy()
     if str(type(img2)) != "<class 'numpy.ndarray'>":
-        img2 = img2.numpy()
+        img2 = img2.detach().numpy()
     return 10. * np.log10(255. / np.mean((img1 - img2) ** 2)) / 3
 
 def psnr(img1, img2, channel_num):
